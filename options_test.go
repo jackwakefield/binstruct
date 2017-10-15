@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,4 +37,64 @@ func TestParseTagFieldOptions(t *testing.T) {
 		AlignBytes:  8,
 		Mask:        0xFFFFFFFF,
 	}, options)
+}
+
+func TestParseTagFieldInvalidSkip(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"skip=A"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagInt64.Error())
+}
+
+func TestParseTagFieldInvalidOffset(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"offset=A"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagInt64.Error())
+}
+
+func TestParseTagFieldInvalidOffsetField(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"offsetfield"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagString.Error())
+}
+
+func TestParseTagFieldInvalidLen(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"len=A"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagInt64.Error())
+}
+
+func TestParseTagFieldInvalidLenField(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"lenfield"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagString.Error())
+}
+
+func TestParseTagFieldInvalidStringType(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"stringtype"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagString.Error())
+}
+
+func TestParseTagFieldInvalidStringPad(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"stringpad"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagString.Error())
+}
+
+func TestParseTagFieldInvalidAlign(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"align=1"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagBool.Error())
+}
+
+func TestParseTagFieldInvalidAlignBytes(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"alignbytes=false"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagInt64.Error())
+}
+
+func TestParseTagFieldInvalidMask(t *testing.T) {
+	tag := parseTag(reflect.StructTag(`binstruct:"mask=false"`))
+	_, err := parseTagFieldOptions(tag)
+	assert.EqualError(t, errors.Cause(err), ErrInvalidTagInt64.Error())
 }

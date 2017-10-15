@@ -71,7 +71,7 @@ type fieldDefinition struct {
 	Field    reflect.StructField
 	Type     reflect.Type
 	Options  *FieldOptions
-	Children []*structDefinition
+	Children *structDefinition
 }
 
 // numericalFieldKinds contains a list of the valid kinds when dealing with numbers (offsets, lengths etc.)
