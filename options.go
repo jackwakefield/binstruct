@@ -1,38 +1,52 @@
 package binstruct
 
 import "github.com/pkg/errors"
+import "math/bits"
 
 type StringType = string
 
 const (
-	// StringFixed is a fixed length string, the length is specified by the options Len or LenField.
+	// StringFixed is a fixed length string, the length is specified
+	// by the options Len or LenField.
 	StringFixed StringType = "fixed"
-	// StringNullTerminated is a string with no predetermined length. When reading the string ends when a null-byte is
-	// reached, when writing the string is written suffixed with a null-byte.
+	// StringNullTerminated is a string with no predetermined length.
+	// Reading the string ends when a null-byte is reached.
+	// Writing the string is suffixed with a null-byte.
 	StringNullTerminated StringType = "null"
-	// StringInt8 is a string with the length determined by a 1-byte prefix.
+	// StringInt8 is a string with the length determined by a
+	// 1-byte prefix.
 	StringInt8 StringType = "int8"
-	// StringInt16 is a string with the length determined by a 2-byte prefix.
+	// StringInt16 is a string with the length determined by a
+	// 2-byte prefix.
 	StringInt16 StringType = "int16"
-	// StringInt32 is a string with the length determined by a 4-byte prefix.
+	// StringInt32 is a string with the length determined by a
+	// 4-byte prefix.
 	StringInt32 StringType = "int32"
-	// StringInt64 is a string with the length determined by a 8-byte prefix.
+	// StringInt64 is a string with the length determined by a
+	// 8-byte prefix.
 	StringInt64 StringType = "int64"
 )
 
-// FieldOptions define the options used when reading and writing the struct field.
+// FieldOptions define the options used when reading and writing
+// the struct field.
 type FieldOptions struct {
-	// Skip is a relative position in the stream where the value will be read from or written to.
+	// Skip is a relative position in the stream where the value
+	// will be read from or written to.
 	Skip int64
-	// Offset is an absolute position in the stream where the value will be read from or written to.
+	// Offset is an absolute position in the stream where the
+	// value will be read from or written to.
 	Offset int64
-	// OffsetField is the name of a sibling field which will be used as the offset.
+	// OffsetField is the name of a sibling field which will be
+	// used as the offset.
 	OffsetField string
-	// Len is the fixed size of the slice or string being read or written. If the field is a string this will be
-	// ignored unless StringType is empty. If the actual length of the string is lower than the fixed length, the
-	// remaining bytes will be padding with a null character or the value of StringPad.
+	// Len is the fixed size of the slice or string being read or
+	// written. In the case of a string this is used when StringType
+	// is fixed. If the actual length of the string is lower than the
+	// fixed length, the remaining bytes will be padded with a null
+	// character, which can be overriden by setting StringPad.
 	Len int64
-	// LenField is the name of a sibling field which will be used as the slice or string length.
+	// LenField is the name of a sibling field which will be used as
+	// the slice or string length.
 	LenField string
 	// StringType is the type of string to be read or written.
 	StringType StringType
@@ -43,7 +57,7 @@ type FieldOptions struct {
 	// AlignBytes is the number of bytes to align the struct data to.
 	AlignBytes int64
 	// Mask is applied to integer values when reading (XOR) and writing (OR).
-	Mask int64
+	Mask uint64
 }
 
 var defaultFieldOptions = &FieldOptions{
@@ -59,8 +73,8 @@ var defaultFieldOptions = &FieldOptions{
 	Mask:        0,
 }
 
-// SetDefaultOptions sets the default options for fields, these are overriden by the tags defined alongside the
-// struct field.
+// SetDefaultOptions sets the default options for fields, these are overriden
+// by the tags defined alongside the struct field.
 func SetDefaultOptions(options *FieldOptions) {
 	defaultFieldOptions = options
 }
@@ -118,10 +132,16 @@ func parseTagFieldOptions(t tag) (*FieldOptions, error) {
 			}
 		}
 		if t.Contains("mask") {
-			if options.Mask, err = t.Int64("mask"); err != nil {
+			if mask, err := t.Int64("mask"); err != nil {
+				options.Mask = uint64(mask)
 				return nil, errors.Wrap(err, "failed to parse mask value")
 			}
 		}
 	}
 	return options, nil
+}
+
+// MaskBits returns the minimum number of bits required to represent the mask option.
+func (o *FieldOptions) MaskBits() int {
+	return bits.Len64(o.Mask)
 }
