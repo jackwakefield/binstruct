@@ -1,4 +1,4 @@
-# binstruct
+# binstruct [![Build Status](https://travis-ci.org/jackwakefield/binstruct.svg?branch=master)](https://travis-ci.org/jackwakefield/binstruct) [![Coverage Status](https://coveralls.io/repos/github/jackwakefield/binstruct/badge.svg?branch=master)](https://coveralls.io/github/jackwakefield/binstruct?branch=master)
 
 binstruct allows flexible tag-based binary marshalling and unmarshalling with Go.
 
