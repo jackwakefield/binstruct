@@ -8,9 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type tag struct {
-	Values map[string]interface{}
-}
+type tag map[string]interface{}
 
 var (
 	ErrInvalidTagInt64   = errors.New("expected tag value to be a parsable int64")
@@ -19,20 +17,21 @@ var (
 	ErrInvalidTagBool    = errors.New("expected tag value to be a parsable boolean")
 )
 
-func parseTag(t reflect.StructTag) *tag {
+func parseTag(t reflect.StructTag) tag {
+	result := make(map[string]interface{})
 	value, _ := t.Lookup("binstruct")
-	keys := strings.Split(value, ",")
-
-	result := &tag{
-		Values: make(map[string]interface{}, len(keys)),
-	}
-	for _, key := range keys {
-		if separator := strings.Index(key, "="); separator >= 0 {
-			value := parseTagValue(key[:separator])
-			key = key[0 : separator-1]
-			result.Values[key] = value
-		} else {
-			result.Values[key] = true
+	if value != "" {
+		keys := strings.Split(value, ",")
+		for _, key := range keys {
+			if key != "" {
+				if separator := strings.Index(key, "="); separator >= 0 {
+					value := parseTagValue(key[separator+1:])
+					key = key[0:separator]
+					result[key] = value
+				} else {
+					result[key] = true
+				}
+			}
 		}
 	}
 	return result
@@ -45,19 +44,19 @@ func parseTagValue(literal string) interface{} {
 	if literal == "false" {
 		return false
 	}
-	if strings.Index(literal, ".") >= 0 {
+	if index := strings.Index(literal, "."); index >= 0 && index < len(literal)-1 {
 		if value, err := strconv.ParseFloat(literal, 64); err == nil {
 			return value
 		}
 	}
-	if value, err := strconv.ParseInt(literal, 10, 64); err == nil {
+	if value, err := strconv.ParseInt(literal, 0, 64); err == nil {
 		return value
 	}
 	return literal
 }
 
-func (t *tag) Int64(key string) (int64, error) {
-	value, ok := t.Values[key]
+func (t tag) Int64(key string) (int64, error) {
+	value, ok := t[key]
 	if ok {
 		option, ok := value.(int64)
 		if !ok {
@@ -68,8 +67,8 @@ func (t *tag) Int64(key string) (int64, error) {
 	return 0, nil
 }
 
-func (t *tag) Float64(key string) (float64, error) {
-	value, ok := t.Values[key]
+func (t tag) Float64(key string) (float64, error) {
+	value, ok := t[key]
 	if ok {
 		option, ok := value.(float64)
 		if !ok {
@@ -80,8 +79,8 @@ func (t *tag) Float64(key string) (float64, error) {
 	return 0, nil
 }
 
-func (t *tag) String(key string) (string, error) {
-	value, ok := t.Values[key]
+func (t tag) String(key string) (string, error) {
+	value, ok := t[key]
 	if ok {
 		option, ok := value.(string)
 		if !ok {
@@ -92,7 +91,7 @@ func (t *tag) String(key string) (string, error) {
 	return "", nil
 }
 
-func (t *tag) Byte(key string) (byte, error) {
+func (t tag) Byte(key string) (byte, error) {
 	value, err := t.String(key)
 	if err != nil {
 		return 0, err
@@ -103,8 +102,8 @@ func (t *tag) Byte(key string) (byte, error) {
 	return 0, nil
 }
 
-func (t *tag) Bool(key string) (bool, error) {
-	value, ok := t.Values[key]
+func (t tag) Bool(key string) (bool, error) {
+	value, ok := t[key]
 	if ok {
 		option, ok := value.(bool)
 		if !ok {
@@ -115,7 +114,7 @@ func (t *tag) Bool(key string) (bool, error) {
 	return false, nil
 }
 
-func (t *tag) Contains(key string) bool {
-	_, ok := t.Values[key]
+func (t tag) Contains(key string) bool {
+	_, ok := t[key]
 	return ok
 }
